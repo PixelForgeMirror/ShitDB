@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace Database;
 
-public class Worker(ILogger<Worker> logger, IOptions<DatabaseConfig> dbConfig) : BackgroundService
+public class Worker(ILogger<Worker> logger, IOptions<DatabaseConfig> dbConfig, ConnectionHandler connectionHandler) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -16,6 +16,8 @@ public class Worker(ILogger<Worker> logger, IOptions<DatabaseConfig> dbConfig) :
         {
             var client = await serverSocket.AcceptTcpClientAsync(stoppingToken);
             logger.LogDebug($"Client connected from {client.Client.RemoteEndPoint}");
+            
+            connectionHandler.HandleConnection(client, stoppingToken); // do not await on purpose
         }
     }
 }
