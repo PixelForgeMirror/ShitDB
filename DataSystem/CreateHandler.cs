@@ -1,12 +1,13 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using ShitDB.BufferManagement;
 using ShitDB.Domain;
 using ShitDB.Util;
 using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
-public class CreateHandler(ILogger<CreateHandler> logger) : IQueryHandler
+public class CreateHandler(ILogger<CreateHandler> logger, TableInitializer initializer) : IQueryHandler
 {
     public async Task<Result<List<string>, Exception>> Execute(string query)
     {
@@ -53,9 +54,7 @@ public class CreateHandler(ILogger<CreateHandler> logger) : IQueryHandler
             
             TableDescriptor table = new (tableName, cols);
             
-            logger.LogInformation(table.ToString());
-            
-            // todo: pass onto paging file and store the record
+            (await initializer.Init(table)).HandleErr(err => logger.LogError(err.ToString()));
         }
         else
         {

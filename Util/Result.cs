@@ -30,6 +30,22 @@ public readonly struct Result<TValue, TError>
     {
         return new Result<TValue, TError>(err);
     }
+    
+    public void HandleOk(Action<TValue> valueHandler)
+    {
+        if (_value is not null && _ok)
+        {
+            valueHandler(_value);
+        }
+    }
+
+    public void HandleErr(Action<TError> errorHandler)
+    {
+        if (_error is not null && !_ok)
+        {
+            errorHandler(_error);
+        }
+    }
 
     public void UnwrapOr(Action<TValue> valueHandler, Action<TError> errorHandler)
     {
