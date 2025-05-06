@@ -20,6 +20,7 @@ builder.Services.AddTransient<UpdateHandler>();
 
 // Io handling
 builder.Services.AddTransient<TableInitializer>();
+builder.Services.AddTransient<SchemaFetcher>();
 
 builder.Services.AddOptions<DatabaseConfig>()
     .BindConfiguration("Database")

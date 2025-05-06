@@ -16,14 +16,13 @@ public class TableInitializer(ILogger<TableInitializer> logger, IOptions<Databas
             if (!Directory.Exists(dbConfig.Value.DataFolderPath))
                 Directory.CreateDirectory(dbConfig.Value.DataFolderPath ?? throw new Exception("Data directory not configured"));
             
-            var tableFile = dbConfig.Value.DataFolderPath + "/" + descriptor.Name + ".json";
-            File.Create(tableFile).Close();
+            var tableSchemaFile = dbConfig.Value.DataFolderPath + "/" + descriptor.Name + "_schema.json";
+            File.Create(tableSchemaFile).Close();
+            File.Create(dbConfig.Value.DataFolderPath + "/" + descriptor.Name + ".json").Close();
 
-            var table = new Table(descriptor, new List<TableRow>());
+            var tableDescriptor = JsonSerializer.Serialize(descriptor);
 
-            var tableContent = JsonSerializer.Serialize(table);
-
-            await File.WriteAllTextAsync(tableFile, tableContent);
+            await File.WriteAllTextAsync(tableSchemaFile, tableDescriptor);
         }
         catch (Exception e)
         {

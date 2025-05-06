@@ -1,20 +1,24 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using ShitDB.BufferManagement;
 using ShitDB.Domain;
 using ShitDB.Util;
 using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
-public class InsertHandler(ILogger<InsertHandler> logger) : IQueryHandler
+public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFetcher) : IQueryHandler
 {
     public async Task<Result<List<string>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^CREATE\s+TABLE\s+(\w+)\s*\(\s*((?:\w+\s+(?:string|integer)\s*,\s*)*(?:\w+\s+(?:string|integer)))\s*\)", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s+VALUES\s+\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\)", RegexOptions.IgnoreCase);
         if (match.Success)
         {
             string tableName = match.Groups[1].Value;
-            List<string> columns = match.Groups[2].Value.Split(',').ToList();
+            List<string>? columns = match.Groups.Count == 3 ? match.Groups[2].Value.Split(',').ToList() : null;
+            List<string> values = match.Groups.Count == 4 ? match.Groups[3].Value.Split(',').ToList() : match.Groups[2].Value.Split(',').ToList();
+            
+            var tableDescriptor = await schemaFetcher.Fetch(tableName);
 
             var cols = new List<ColumnDescriptor>();
             
