@@ -1,35 +1,34 @@
 ﻿using System.Text.RegularExpressions;
-using Domain;
 using Microsoft.Extensions.Logging;
-using Util;
-using Type = Domain.Type;
+using ShitDB.Domain;
+using ShitDB.Util;
+using Type = ShitDB.Domain.Type;
 
-namespace DataSystem;
+namespace ShitDB.DataSystem;
 
-public class QueryDecoder(ILogger<QueryDecoder> logger)
+public class QueryDecoder(
+    ILogger<QueryDecoder> logger,
+    CreateHandler createHandler,
+    InsertHandler insertHandler,
+    SelectHandler selectHandler,
+    UpdateHandler updateHandler,
+    DeleteHandler deleteHandler
+    )
 {
     public async Task<Result<List<string>, Exception>> DecodeQuery(string query)
     {
         switch (query)
         {
             case var q when Regex.IsMatch(q, @"^CREATE TABLE", RegexOptions.IgnoreCase):
-                return await CreateTable(q);
+                return await createHandler.Execute(q);
             case var q when Regex.IsMatch(q, @"^INSERT INTO", RegexOptions.IgnoreCase):
-                InsertInto(q);
-                break;
-
+                return await insertHandler.Execute(q);
             case var q when Regex.IsMatch(q, @"^SELECT", RegexOptions.IgnoreCase):
-                Select(q);
-                break;
-
+                return await selectHandler.Execute(q);
             case var q when Regex.IsMatch(q, @"^UPDATE", RegexOptions.IgnoreCase):
-                Update(q);
-                break;
-
+                return await updateHandler.Execute(q);
             case var q when Regex.IsMatch(q, @"^DELETE FROM", RegexOptions.IgnoreCase):
-                Delete(q);
-                break;
-
+                return await deleteHandler.Execute(q);
             default:
                 logger.LogError($"Unknown query received: {query}");
                 break;
@@ -37,8 +36,8 @@ public class QueryDecoder(ILogger<QueryDecoder> logger)
 
         return new List<string>();
     }
-    
-    private async Task<Result<List<string>, Exception>> CreateTable(string query)
+
+    private async Task<Result<List<string>, Exception>> InsertInto(string query)
     {
         var match = Regex.Match(query, @"^CREATE\s+TABLE\s+(\w+)\s*\(\s*((?:\w+\s+(?:string|integer)\s*,\s*)*(?:\w+\s+(?:string|integer)))\s*\)", RegexOptions.IgnoreCase);
         if (match.Success)
@@ -92,21 +91,5 @@ public class QueryDecoder(ILogger<QueryDecoder> logger)
             return new Exception("Invalid create table statement");
         }
         return new List<string>();
-    }
-
-    private void InsertInto(string query)
-    {
-    }
-
-    private void Select(string query)
-    {
-    }
-
-    private void Update(string query)
-    {
-    }
-
-    private void Delete(string query)
-    {
     }
 }

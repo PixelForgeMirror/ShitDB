@@ -6,6 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-ShitDB-3776788c-c4ee-4829-a106-c8972b3dacf8</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <AssemblyName>ShitDB.Database</AssemblyName>
+        <RootNamespace>ShitDB.Database</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +21,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\BufferManagement\BufferManagement.csproj" />
+      <ProjectReference Include="..\Config\Config.csproj" />
       <ProjectReference Include="..\DataSystem\DataSystem.csproj" />
     </ItemGroup>
 </Project>

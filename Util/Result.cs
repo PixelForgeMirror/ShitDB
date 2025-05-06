@@ -1,6 +1,4 @@
-using System.Runtime.CompilerServices;
-
-namespace Util;
+namespace ShitDB.Util;
 
 public readonly struct Result<TValue, TError>
 {
@@ -35,11 +33,11 @@ public readonly struct Result<TValue, TError>
 
     public void UnwrapOr(Action<TValue> valueHandler, Action<TError> errorHandler)
     {
-        if (_error is not null)
+        if (_error is not null && !_ok)
         {
             errorHandler(_error);
         }
-        else if (_value is not null)
+        else if (_value is not null && _ok)
         {
             valueHandler(_value);
         }

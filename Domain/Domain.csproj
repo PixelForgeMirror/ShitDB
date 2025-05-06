@@ -4,6 +4,8 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyName>ShitDB.Domain</AssemblyName>
+        <RootNamespace>ShitDB.Domain</RootNamespace>
     </PropertyGroup>
 
 </Project>

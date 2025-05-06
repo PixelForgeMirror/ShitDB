@@ -1,8 +1,9 @@
 using System.Net.Sockets;
-using Database.Config;
+using Database;
 using Microsoft.Extensions.Options;
+using ShitDB.Config;
 
-namespace Database;
+namespace ShitDB.Database;
 
 public class Worker(ILogger<Worker> logger, IOptions<DatabaseConfig> dbConfig, ConnectionHandler connectionHandler) : BackgroundService
 {
