@@ -85,7 +85,7 @@ public readonly struct Result<TValue, TError>
         throw new ArgumentException("Broken result. Neither value nor error is present.");
     }
 
-    public Result<TNewTValue, TNewTError> Map<TNewTValue, TNewTError>(Func<TValue, TNewTValue> mapOk,  Func<TError, TNewTError> mapErr)
+    public Result<TNewTValue, TNewTError> Map<TNewTValue, TNewTError>(Func<TValue, TNewTValue?> mapOk,  Func<TError, TNewTError?> mapErr)
     {
         return new Result<TNewTValue, TNewTError>(_error is not null && !_ok ? mapErr(_error) : default, _value is not null && _ok ? mapOk(_value) : default, _ok);
     }

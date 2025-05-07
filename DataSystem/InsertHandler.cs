@@ -9,24 +9,22 @@ namespace ShitDB.DataSystem;
 
 public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFetcher, TypeValidator typeValidator, TableInserter inserter) : IQueryHandler
 {
-    public async Task<Result<List<string>, Exception>> Execute(string query)
+    public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s+VALUES\s+\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\)", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s*VALUES\s*\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\)", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return new Exception("Invalid insert into statement");
         }
 
         string tableName = match.Groups[1].Value;
-        List<string> columns = !String.IsNullOrEmpty(match.Groups[2].Value) ? match.Groups[2].Value.Split(',').ToList() : new ();
-        columns = columns.Select(val => val.Trim()).ToList();
-        List<string> values = match.Groups[3].Value.Split(',').ToList();
-        values = values.Select(val => val.Trim()).ToList();
+        List<string> columns = !String.IsNullOrEmpty(match.Groups[2].Value) ? match.Groups[2].Value.Split(',').Select(val => val.Trim()).ToList() : new ();
+        List<string> values = match.Groups[3].Value.Split(',').Select(val => val.Trim()).ToList();
 
         var tableDescriptorResult = await schemaFetcher.Fetch(tableName);
         if (tableDescriptorResult.IsErr())
         {
-            return tableDescriptorResult.Map(_ => new List<string>(),inner => new Exception("Table not found", inner));
+            return tableDescriptorResult.Map(_ => new List<TableRow>(),inner => new Exception("Table not found", inner));
         }
         var tableDescriptor = tableDescriptorResult.Unwrap();
 
@@ -70,6 +68,6 @@ public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFe
         
         var result = await inserter.Insert(tableDescriptor, new TableRow(sortedValues));
             
-        return result.MapOk(_ => new List<string> { "Inserted 1 row." });
+        return result.MapOk(_ => new List<TableRow> { new(["Inserted 1 row."]) });
     }
 }

@@ -15,7 +15,7 @@ public class QueryDecoder(
     DeleteHandler deleteHandler
     )
 {
-    public async Task<Result<List<string>, Exception>> DecodeQuery(string query)
+    public async Task<Result<List<TableRow>, Exception>> DecodeQuery(string query)
     {
         switch (query)
         {
@@ -34,6 +34,6 @@ public class QueryDecoder(
                 break;
         }
 
-        return new List<string>();
+        return new List<TableRow>();
     }
 }

@@ -9,7 +9,7 @@ namespace ShitDB.DataSystem;
 
 public class CreateHandler(ILogger<CreateHandler> logger, TableInitializer initializer) : IQueryHandler
 {
-    public async Task<Result<List<string>, Exception>> Execute(string query)
+    public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
         var match = Regex.Match(query, @"^CREATE\s+TABLE\s+(\w+)\s*\(\s*((?:\w+\s+(?:string|integer)\s*,\s*)*(?:\w+\s+(?:string|integer)))\s*\)", RegexOptions.IgnoreCase);
         if (!match.Success)
@@ -58,6 +58,6 @@ public class CreateHandler(ILogger<CreateHandler> logger, TableInitializer initi
         TableDescriptor table = new (tableName, cols);
 
         var result = await initializer.Init(table);
-        return result.MapOk(_ => new List<string> { "Created 1 table." });
+        return result.MapOk(_ => new List<TableRow> { new(["Created 1 table."]) });
     }
 }

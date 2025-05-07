@@ -25,4 +25,8 @@
       <ProjectReference Include="..\Config\Config.csproj" />
       <ProjectReference Include="..\DataSystem\DataSystem.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="data\" />
+    </ItemGroup>
 </Project>

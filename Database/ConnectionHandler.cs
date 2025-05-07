@@ -39,7 +39,8 @@ public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder d
                     else
                     {
                         var values = result.Unwrap();
-                        response = String.Join('\n', values);
+                        var lines = values.Select(val => String.Join(',', val.Entries)).ToList();
+                        response = String.Join('\n', lines);
                     }
 
                     byte[] responseBuffer = Encoding.UTF8.GetBytes(response);
