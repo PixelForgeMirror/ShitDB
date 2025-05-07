@@ -9,10 +9,11 @@ namespace ShitDB.DataSystem;
 public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) : IQueryHandler
 {
     public async Task<Result<List<TableRow>, Exception>> Execute(string query)
-    {var match = Regex.Match(query, @"^SELECT\s+((?:(?:\w+|\*)\s*,\s*)*(?:\w+|\*))\s+FROM\s+(\w+)(?:\s+WHERE\s+(\w+\s*=\s*\w+))?", RegexOptions.IgnoreCase);
+    {
+        var match = Regex.Match(query, @"^SELECT\s+((?:(?:\w+|\*)\s*,\s*)*(?:\w+|\*))\s+FROM\s+(\w+)(?:\s+WHERE\s+(\w+\s*=\s*\w+))?", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
-            return new Exception("Invalid insert into statement");
+            return new Exception("Invalid select statement");
         }
 
         string tableName = match.Groups[2].Value;
@@ -40,7 +41,11 @@ public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) 
         
         var whereIndex = table.Descriptor.Columns.FindIndex(val => val.Name == whereClause.FirstOrDefault());
 
-        if (whereIndex == -1)
+        if (whereIndex == -1 && whereClause.Count > 0)
+        {
+            return new Exception($"Where clause referenced column {whereClause.FirstOrDefault()} which is not part of table {table.Descriptor.Name}");
+        }
+        else if (whereIndex == -1)
         {
             filteredRows = table.TableRows;
         }
