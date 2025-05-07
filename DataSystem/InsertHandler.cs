@@ -7,64 +7,69 @@ using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
-public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFetcher) : IQueryHandler
+public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFetcher, TypeValidator typeValidator, TableInserter inserter) : IQueryHandler
 {
     public async Task<Result<List<string>, Exception>> Execute(string query)
     {
         var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s+VALUES\s+\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\)", RegexOptions.IgnoreCase);
-        if (match.Success)
+        if (!match.Success)
         {
-            string tableName = match.Groups[1].Value;
-            List<string>? columns = match.Groups.Count == 3 ? match.Groups[2].Value.Split(',').ToList() : null;
-            List<string> values = match.Groups.Count == 4 ? match.Groups[3].Value.Split(',').ToList() : match.Groups[2].Value.Split(',').ToList();
-            
-            var tableDescriptor = await schemaFetcher.Fetch(tableName);
+            return new Exception("Invalid insert into statement");
+        }
 
-            var cols = new List<ColumnDescriptor>();
-            
-            var whiteSpace = new char[] { ' ', '\t', '\n', '\r' };
-            foreach (var column in columns)
+        string tableName = match.Groups[1].Value;
+        List<string> columns = !String.IsNullOrEmpty(match.Groups[2].Value) ? match.Groups[2].Value.Split(',').ToList() : new ();
+        columns = columns.Select(val => val.Trim()).ToList();
+        List<string> values = match.Groups[3].Value.Split(',').ToList();
+        values = values.Select(val => val.Trim()).ToList();
+
+        var tableDescriptorResult = await schemaFetcher.Fetch(tableName);
+        if (tableDescriptorResult.IsErr())
+        {
+            return tableDescriptorResult.Map(_ => new List<string>(),inner => new Exception("Table not found", inner));
+        }
+        var tableDescriptor = tableDescriptorResult.Unwrap();
+
+        if ((columns.Count != 0 && columns.Count != tableDescriptor.Columns.Count) || values.Count != tableDescriptor.Columns.Count)
+            return new Exception($"Provided {columns.Count} column names and {values.Count} values. Expected {tableDescriptor.Columns.Count}.");
+        
+        List<string> sortedValues = new();
+
+        if (columns.Count > 0)
+        {
+            foreach (var schemaColumn in tableDescriptor.Columns)
             {
-                string col = column.Trim();
-                int index = col.IndexOfAny(whiteSpace);
-
-                int endOfWhitespace = index;
-                while (endOfWhitespace < col.Length && char.IsWhiteSpace(col[endOfWhitespace]))
+                bool found = false;
+                for (int i = 0; i < columns.Count; i++)
                 {
-                    endOfWhitespace++;
+                    if (schemaColumn.Name.Equals(columns[i].Trim()))
+                    {
+                        found = true;
+                        sortedValues.Add(values[i]);
+                        columns.RemoveAt(i);
+                        values.RemoveAt(i);
+                        break;
+                    }
                 }
-
-                string name = col.Substring(0, index);
-                string typeString = col.Substring(endOfWhitespace).ToLower();
-
-                Type type;
-
-                if (typeString == "string")
-                {
-                    type = Type.String;    
-                }
-                else if (typeString == "integer")
-                {
-                    type = Type.Integer;
-                }
-                else
-                {
-                    return new Exception("Unknown column type received: " + col);
-                }
-                
-                cols.Add(new ColumnDescriptor(name, type));
+                if (!found)
+                    return new Exception($"Column {schemaColumn.Name} needed for table {tableDescriptor.Name} was not provided in the query.");
             }
-            
-            TableDescriptor table = new (tableName, cols);
-            
-            logger.LogInformation(table.ToString());
-            
-            // todo: pass onto paging file and store the record
         }
         else
         {
-            return new Exception("Invalid create table statement");
+            sortedValues = values;
         }
-        return new List<string>();
+            
+        for (int i = 0; i < tableDescriptor.Columns.Count; i++)
+        {
+            if (!typeValidator.Validate(tableDescriptor.Columns[i].Type, sortedValues[i]))
+            {
+                return new Exception($"The value provided {sortedValues[i]} for column {tableDescriptor.Columns[i].Name} is not compatible with type {tableDescriptor.Columns[i].Type}.");
+            }
+        }
+        
+        var result = await inserter.Insert(tableDescriptor, new TableRow(sortedValues));
+            
+        return result.MapOk(_ => new List<string> { "Inserted 1 row." });
     }
 }

@@ -7,22 +7,25 @@ using System.Text.Json;
 
 namespace ShitDB.BufferManagement;
 
-public class TableInitializer(ILogger<TableInitializer> logger, IOptions<DatabaseConfig> dbConfig)
+public class TableInitializer(ILogger<TableInitializer> logger, IOptions<DatabaseConfig> dbConfig, FileResolver resolver)
 {
     public async Task<Result<bool, Exception>> Init(TableDescriptor descriptor)
     {
         try
         {
-            if (!Directory.Exists(dbConfig.Value.DataFolderPath))
-                Directory.CreateDirectory(dbConfig.Value.DataFolderPath ?? throw new Exception("Data directory not configured"));
+            if (dbConfig.Value.DataFolderPath is null)
+                return new Exception("Data directory not configured");
             
-            var tableSchemaFile = dbConfig.Value.DataFolderPath + "/" + descriptor.Name + "_schema.json";
-            File.Create(tableSchemaFile).Close();
-            File.Create(dbConfig.Value.DataFolderPath + "/" + descriptor.Name + ".json").Close();
+            if (!Directory.Exists(dbConfig.Value.DataFolderPath))
+                Directory.CreateDirectory(dbConfig.Value.DataFolderPath);
+
+            File.Create(resolver.ResolveSchema(descriptor)).Close();
+            File.Create(resolver.ResolveTable(descriptor)).Close();
 
             var tableDescriptor = JsonSerializer.Serialize(descriptor);
 
-            await File.WriteAllTextAsync(tableSchemaFile, tableDescriptor);
+            await File.WriteAllTextAsync(resolver.ResolveSchema(descriptor), tableDescriptor);
+            await File.WriteAllTextAsync(resolver.ResolveTable(descriptor), "[]");
         }
         catch (Exception e)
         {

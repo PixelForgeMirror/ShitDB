@@ -3,6 +3,7 @@ using ShitDB.BufferManagement;
 using ShitDB.Config;
 using ShitDB.Database;
 using ShitDB.DataSystem;
+using ShitDB.Domain;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -17,10 +18,13 @@ builder.Services.AddTransient<DeleteHandler>();
 builder.Services.AddTransient<InsertHandler>();
 builder.Services.AddTransient<SelectHandler>();
 builder.Services.AddTransient<UpdateHandler>();
+builder.Services.AddTransient<TypeValidator>();
 
 // Io handling
 builder.Services.AddTransient<TableInitializer>();
 builder.Services.AddTransient<SchemaFetcher>();
+builder.Services.AddTransient<FileResolver>();
+builder.Services.AddTransient<TableInserter>();
 
 builder.Services.AddOptions<DatabaseConfig>()
     .BindConfiguration("Database")

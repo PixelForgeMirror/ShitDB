@@ -7,17 +7,17 @@ using ShitDB.Util;
 
 namespace ShitDB.BufferManagement;
 
-public class SchemaFetcher(ILogger<SchemaFetcher> logger, IOptions<DatabaseConfig> dbConfig)
+public class SchemaFetcher(ILogger<SchemaFetcher> logger, IOptions<DatabaseConfig> dbConfig, FileResolver resolver)
 {
     public async Task<Result<TableDescriptor, Exception>> Fetch(string tableName)
     {
         try
         {
-            var tableContent = await File.ReadAllTextAsync($"{dbConfig.Value.DataFolderPath}/{tableName}_schema.json");
+            var schemaContent = await File.ReadAllTextAsync(resolver.ResolveSchema(TableDescriptor.FromName(tableName)));
             
-            var tableSchema = JsonSerializer.Deserialize<TableDescriptor>(tableContent);
+            var tableSchema = JsonSerializer.Deserialize<TableDescriptor>(schemaContent);
 
-            return tableSchema!;
+            return tableSchema == null ? new Exception("Failed loading schema") : tableSchema;
         }
         catch (Exception e)
         {

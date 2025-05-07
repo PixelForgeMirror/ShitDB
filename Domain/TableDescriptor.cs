@@ -20,6 +20,11 @@ public class TableDescriptor(string name, List<ColumnDescriptor> columns)
         return Name.GetHashCode();
     }
 
+    public static TableDescriptor FromName(string tableName)
+    {
+        return new TableDescriptor(tableName, new());
+    }
+    
     public List<ColumnDescriptor> Columns { get; init; } = columns;
     public string Name { get; init; } = name;
 }

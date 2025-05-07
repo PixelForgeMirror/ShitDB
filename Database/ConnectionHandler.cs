@@ -8,22 +8,49 @@ public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder d
 {
     public async void HandleConnection(TcpClient client, CancellationToken stoppingToken)
     {
-        var stream = client.GetStream();
-        byte[] buffer = new byte[1024];
-
-        StringBuilder query = new StringBuilder(1024);
-        
-        while (!stoppingToken.IsCancellationRequested && client.Connected)
+        try
         {
-            int read = await stream.ReadAsync(buffer, 0, buffer.Length, stoppingToken);
-            query.Append(Encoding.UTF8.GetString(buffer, 0, read));
-            logger.LogDebug(query.ToString());
-            if (buffer[read - 1] == ';') // todo: rework so that any semicolon counts
+            var stream = client.GetStream();
+            byte[] buffer = new byte[1024];
+
+            StringBuilder query = new StringBuilder(1024);
+
+            while (!stoppingToken.IsCancellationRequested && client.Connected)
             {
+                int read = await stream.ReadAsync(buffer, 0, buffer.Length, stoppingToken);
+                if (read <= 0)
+                {
+                    logger.LogInformation("Client disconnected");
+                    return;
+                }
+                query.Append(Encoding.UTF8.GetString(buffer, 0, read));
                 logger.LogDebug(query.ToString());
-                await decoder.DecodeQuery(query.ToString());
-                query.Clear();
+                if (buffer[read - 1] == ';') // todo: rework so that any semicolon counts
+                {
+                    logger.LogDebug(query.ToString());
+                    var result = await decoder.DecodeQuery(query.ToString());
+                    string response;
+
+                    if (result.IsErr())
+                    {
+                        logger.LogError(result.UnwrapErr(), $"Error occured during executing query {query}");
+                        response = result.UnwrapErr().Message;
+                    }
+                    else
+                    {
+                        var values = result.Unwrap();
+                        response = String.Join('\n', values);
+                    }
+
+                    byte[] responseBuffer = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseBuffer, 0, responseBuffer.Length, stoppingToken);
+                    query.Clear();
+                }
             }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Unexpected error occured while handling connection.");
         }
     }
 }
