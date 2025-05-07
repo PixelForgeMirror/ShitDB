@@ -4,7 +4,7 @@ public class TableDescriptor(string name, List<ColumnDescriptor> columns)
 {
     protected bool Equals(TableDescriptor other)
     {
-        return Equals(other as object);
+        return Name == other.Name;
     }
 
     public override bool Equals(object? obj)

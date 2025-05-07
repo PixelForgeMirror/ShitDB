@@ -26,6 +26,7 @@ builder.Services.AddTransient<SchemaFetcher>();
 builder.Services.AddTransient<FileResolver>();
 builder.Services.AddTransient<TableInserter>();
 builder.Services.AddTransient<TableFetcher>();
+builder.Services.AddSingleton<LockManager>();
 
 builder.Services.AddOptions<DatabaseConfig>()
     .BindConfiguration("Database")

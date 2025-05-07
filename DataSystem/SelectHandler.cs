@@ -19,11 +19,13 @@ public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) 
         List<string> columns = match.Groups[1].Value.Split(',').Select(val => val.Trim()).ToList();
         List<string> whereClause = !String.IsNullOrEmpty(match.Groups[3].Value) ?  match.Groups[3].Value.Split("=").Select(val => val.Trim()).ToList() : new();
 
+        bool wildcardSelect = false;
+        
         foreach (var column in columns)
         {
             if (column == "*")
             {
-                columns = ["*"];
+                wildcardSelect = true;
                 break;
             }
         }
@@ -51,6 +53,35 @@ public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) 
                     filteredRows.Add(row);
                 }
             }
+        }
+
+        if (!wildcardSelect)
+        {
+            List<int> keepIndices = new List<int>();
+
+            foreach (var selected in columns)
+            {
+                var index = table.Descriptor.Columns.FindIndex(val => val.Name == selected);
+                if (index == -1)
+                    return new Exception(
+                        $"The selected column {selected} is not part of the table {table.Descriptor.Name}.");
+                keepIndices.Add(index);
+            }
+            
+            var selectedRows = new List<TableRow>();
+            
+            foreach (var row in filteredRows)
+            {
+                var filteredRow = new List<string>();
+
+                foreach (var index in keepIndices)
+                {
+                    filteredRow.Add(row.Entries[index]);
+                }
+                
+                selectedRows.Add(new(filteredRow));
+            }
+            filteredRows = selectedRows;
         }
 
         return filteredRows;
