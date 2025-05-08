@@ -31,7 +31,7 @@ public class QueryDecoder(
                 return await deleteHandler.Execute(q);
             default:
                 logger.LogError($"Unknown query received: {query}");
-                break;
+                return new Exception("Unknown query type.");
         }
 
         return new List<TableRow>();

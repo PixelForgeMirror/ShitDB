@@ -73,6 +73,6 @@ public class UpdateHandler(TableUpdater updater, TypeValidator validator) : IQue
                     inner => new Exception("Failed updating table", inner));
         }
 
-        return new List<TableRow> { new([$"Updated {rowsAffected} row."]) };
+        return new List<TableRow> { new([$"Updated {rowsAffected} rows."]) };
     }
 }
