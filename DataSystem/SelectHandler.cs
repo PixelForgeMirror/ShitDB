@@ -6,11 +6,11 @@ using ShitDB.Util;
 
 namespace ShitDB.DataSystem;
 
-public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) : IQueryHandler
+public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher, TypeConverter converter) : IQueryHandler
 {
     public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^SELECT\s+((?:(?:\w+|\*)\s*,\s*)*(?:\w+|\*))\s+FROM\s+(\w+)(?:\s+WHERE\s+(\w+\s*=\s*\w+))?", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^SELECT\s+((?:(?:\w+|\*)\s*,\s*)*(?:\w+|\*))\s+FROM\s+(\w+)(?:\s+WHERE\s+(\w+\s*=\s*(?:\d+|"".*"")))?", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return new Exception("Invalid select statement");
@@ -51,6 +51,7 @@ public class SelectHandler(ILogger<SelectHandler> logger, TableFetcher fetcher) 
         }
         else
         {
+            whereClause[1] = converter.Convert(table.Descriptor.Columns[whereIndex].Type, whereClause[1]);
             foreach (var row in table.TableRows)
             {
                 if (row.Entries[whereIndex] == whereClause[1])

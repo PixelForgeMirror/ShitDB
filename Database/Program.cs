@@ -1,4 +1,3 @@
-using Database;
 using ShitDB.BufferManagement;
 using ShitDB.Config;
 using ShitDB.Database;
@@ -19,6 +18,7 @@ builder.Services.AddTransient<InsertHandler>();
 builder.Services.AddTransient<SelectHandler>();
 builder.Services.AddTransient<UpdateHandler>();
 builder.Services.AddTransient<TypeValidator>();
+builder.Services.AddTransient<TypeConverter>();
 
 // Io handling
 builder.Services.AddTransient<TableInitializer>();

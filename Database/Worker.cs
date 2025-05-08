@@ -1,5 +1,4 @@
 using System.Net.Sockets;
-using Database;
 using Microsoft.Extensions.Options;
 using ShitDB.Config;
 

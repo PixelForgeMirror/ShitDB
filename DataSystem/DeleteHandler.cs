@@ -3,14 +3,15 @@ using Microsoft.Extensions.Logging;
 using ShitDB.BufferManagement;
 using ShitDB.Domain;
 using ShitDB.Util;
+using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
-public class DeleteHandler(TableUpdater updater) : IQueryHandler
+public class DeleteHandler(TableUpdater updater, TypeValidator validator, TypeConverter converter) : IQueryHandler
 {
     public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^DELETE\s+FROM\s+(\w+)\s+WHERE\s+(\w+\s*=\s*\w+)", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^DELETE\s+FROM\s+(\w+)\s+WHERE\s+(\w+\s*=\s*(?:\d+|"".*""))", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return new Exception("Invalid delete from statement");
@@ -35,6 +36,12 @@ public class DeleteHandler(TableUpdater updater) : IQueryHandler
             if (whereIndex == -1)
                 return new Exception(
                     $"Where clause referenced column {whereClause.FirstOrDefault()} which is not part of table {table.Descriptor.Name}");
+
+            if (!validator.Validate(table.Descriptor.Columns[whereIndex].Type, whereClause[1]))
+            {
+                return new Exception($"The value {whereClause[1]} is not assignable to column {whereClause[0]} of type {table.Descriptor.Columns[whereIndex].Type}.");
+            }
+            whereClause[1] = converter.Convert(table.Descriptor.Columns[whereIndex].Type, whereClause[1]);
 
             List<int> removeIndices = new();
 

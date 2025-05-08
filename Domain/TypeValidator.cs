@@ -7,7 +7,7 @@ public class TypeValidator
         return type switch
         {
             Type.Integer => int.TryParse(value, out var i),
-            Type.String => true,
+            Type.String => value is ['"', .., '"'],
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }

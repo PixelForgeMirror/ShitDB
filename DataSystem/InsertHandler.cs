@@ -7,11 +7,11 @@ using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
-public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFetcher, TypeValidator typeValidator, TableInserter inserter) : IQueryHandler
+public class InsertHandler(SchemaFetcher schemaFetcher, TypeValidator typeValidator, TableInserter inserter, TypeConverter converter) : IQueryHandler
 {
     public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s*VALUES\s*\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\)", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^INSERT\s+INTO\s+(\w+)\s*(?:\(\s*((?:\s*\w+\s*,)*\s*\w+)\s*\))?\s*VALUES\s*\(\s*((?:\s*(?:\d+|"".*"")\s*,)*\s*(?:\d+|"".*""))\s*\)", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return new Exception("Invalid insert into statement");
@@ -64,6 +64,8 @@ public class InsertHandler(ILogger<InsertHandler> logger, SchemaFetcher schemaFe
             {
                 return new Exception($"The value provided {sortedValues[i]} for column {tableDescriptor.Columns[i].Name} is not compatible with type {tableDescriptor.Columns[i].Type}.");
             }
+
+            sortedValues[i] = converter.Convert(tableDescriptor.Columns[i].Type, sortedValues[i]);
         }
         
         var result = await inserter.Insert(tableDescriptor, new TableRow(sortedValues));

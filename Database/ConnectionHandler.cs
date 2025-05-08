@@ -2,7 +2,7 @@ using System.Net.Sockets;
 using System.Text;
 using ShitDB.DataSystem;
 
-namespace Database;
+namespace ShitDB.Database;
 
 public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder decoder)
 {
@@ -39,7 +39,7 @@ public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder d
                     else
                     {
                         var values = result.Unwrap();
-                        var lines = values.Select(val => String.Join(',', val.Entries)).ToList();
+                        var lines = values.Select(val => String.Join(", ", val.Entries)).ToList();
                         response = String.Join('\n', lines);
                     }
 

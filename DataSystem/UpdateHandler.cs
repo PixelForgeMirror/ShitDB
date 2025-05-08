@@ -5,21 +5,27 @@ using ShitDB.Util;
 
 namespace ShitDB.DataSystem;
 
-public class UpdateHandler(TableUpdater updater, TypeValidator validator) : IQueryHandler
+public class UpdateHandler(TableUpdater updater, TypeValidator validator, TypeConverter converter) : IQueryHandler
 {
+    private class Assignment(string column, string value)
+    {
+        public string Column { get; init; } = column;
+        public string Value { get; set; } = value;
+    }
+    
     public async Task<Result<List<TableRow>, Exception>> Execute(string query)
     {
-        var match = Regex.Match(query, @"^UPDATE\s+(\w+)\s+SET\s+((?:\s*\w+\s*=\s*\w+\s*,)*(?:\s*\w+\s*=\s*\w+))\s+WHERE\s+(\w+\s*=\s*\w+)", RegexOptions.IgnoreCase);
+        var match = Regex.Match(query, @"^UPDATE\s+(\w+)\s+SET\s+((?:\s*\w+\s*=\s*(?:\d+|"".*"")\s*,)*(?:\s*\w+\s*=\s*(?:\d+|"".*"")))\s+WHERE\s+(\w+\s*=\s*(?:\d+|"".*""))", RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return new Exception("Invalid update statement");
         }
 
         string tableName = match.Groups[1].Value;
-        List<(string Column, string Value)> assignments = match.Groups[2].Value.Split(',').Select(val =>
+        List<Assignment> assignments = match.Groups[2].Value.Split(',').Select(val =>
         {
             var temp = val.Split('=').Select(innerVal => innerVal.Trim()).ToList();
-            return (temp[0], temp[1]);
+            return new Assignment(temp[0], temp[1]);
         }).ToList();
         List<string> whereClause = match.Groups[3].Value.Split('=').Select(val => val.Trim()).ToList();
         
@@ -39,6 +45,11 @@ public class UpdateHandler(TableUpdater updater, TypeValidator validator) : IQue
             if (whereIndex == -1)
                 return new Exception(
                     $"Where clause referenced column {whereClause.FirstOrDefault()} which is not part of table {table.Descriptor.Name}");
+            if (!validator.Validate(table.Descriptor.Columns[whereIndex].Type, whereClause[1]))
+            {
+                return new Exception($"The value {whereClause[1]} is not assignable to column {whereClause[0]} of type {table.Descriptor.Columns[whereIndex].Type}.");
+            }
+            whereClause[1] = converter.Convert(table.Descriptor.Columns[whereIndex].Type, whereClause[1]);
 
             List<int> updateIndices = new List<int>();
 
@@ -60,6 +71,8 @@ public class UpdateHandler(TableUpdater updater, TypeValidator validator) : IQue
                         var descriptor = table.Descriptor.Columns[updateIndices[i]];
                         if (!validator.Validate(descriptor.Type, assignments[i].Value))
                             return new Exception($"Cannot assign value {assignments[i].Value} to column {descriptor.Name} of type {descriptor.Type}.");
+                        
+                        assignments[i].Value = converter.Convert(descriptor.Type, assignments[i].Value);
                         
                         row.Entries[updateIndices[i]] = assignments[i].Value;
                     }
