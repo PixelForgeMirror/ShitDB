@@ -2,6 +2,9 @@ namespace ShitDB.Domain;
 
 public class TableDescriptor(string name, List<ColumnDescriptor> columns)
 {
+    public List<ColumnDescriptor> Columns { get; init; } = columns;
+    public string Name { get; init; } = name;
+
     protected bool Equals(TableDescriptor other)
     {
         return Name == other.Name;
@@ -22,9 +25,6 @@ public class TableDescriptor(string name, List<ColumnDescriptor> columns)
 
     public static TableDescriptor FromName(string tableName)
     {
-        return new TableDescriptor(tableName, new());
+        return new TableDescriptor(tableName, new List<ColumnDescriptor>());
     }
-    
-    public List<ColumnDescriptor> Columns { get; init; } = columns;
-    public string Name { get; init; } = name;
 }

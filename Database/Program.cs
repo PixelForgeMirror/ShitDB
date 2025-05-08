@@ -2,6 +2,7 @@ using ShitDB.BufferManagement;
 using ShitDB.Config;
 using ShitDB.Database;
 using ShitDB.DataSystem;
+using ShitDB.DataSystem.QueryHandler;
 using ShitDB.Domain;
 
 var builder = Host.CreateApplicationBuilder(args);

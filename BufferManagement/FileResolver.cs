@@ -10,7 +10,7 @@ public class FileResolver(IOptions<DatabaseConfig> dbConfig)
     {
         return $"{dbConfig.Value.DataFolderPath}/{descriptor.Name}_schema.json";
     }
-    
+
     public string ResolveTable(TableDescriptor descriptor)
     {
         return $"{dbConfig.Value.DataFolderPath}/{descriptor.Name}.json";

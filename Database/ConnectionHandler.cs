@@ -11,18 +11,19 @@ public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder d
         try
         {
             var stream = client.GetStream();
-            byte[] buffer = new byte[1024];
+            var buffer = new byte[1024];
 
-            StringBuilder query = new StringBuilder(1024);
+            var query = new StringBuilder(1024);
 
             while (!stoppingToken.IsCancellationRequested && client.Connected)
             {
-                int read = await stream.ReadAsync(buffer, 0, buffer.Length, stoppingToken);
+                var read = await stream.ReadAsync(buffer, 0, buffer.Length, stoppingToken);
                 if (read <= 0)
                 {
                     logger.LogInformation("Client disconnected");
                     return;
                 }
+
                 query.Append(Encoding.UTF8.GetString(buffer, 0, read));
                 logger.LogDebug(query.ToString());
                 if (buffer[read - 1] == ';') // todo: rework so that any semicolon counts
@@ -39,11 +40,11 @@ public class ConnectionHandler(ILogger<ConnectionHandler> logger, QueryDecoder d
                     else
                     {
                         var values = result.Unwrap();
-                        var lines = values.Select(val => String.Join(", ", val.Entries)).ToList();
-                        response = String.Join('\n', lines);
+                        var lines = values.Select(val => string.Join(", ", val.Entries)).ToList();
+                        response = string.Join('\n', lines);
                     }
 
-                    byte[] responseBuffer = Encoding.UTF8.GetBytes(response);
+                    var responseBuffer = Encoding.UTF8.GetBytes(response);
                     await stream.WriteAsync(responseBuffer, 0, responseBuffer.Length, stoppingToken);
                     query.Clear();
                 }

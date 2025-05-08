@@ -4,10 +4,15 @@ using ShitDB.Util;
 
 namespace ShitDB.BufferManagement;
 
-public class TableUpdater(FileResolver resolver, LockManager locks): IDisposable
+public class TableUpdater(FileResolver resolver, LockManager locks) : IDisposable
 {
     private IDisposable? _lock;
-    
+
+    public void Dispose()
+    {
+        _lock?.Dispose();
+    }
+
     public async Task<Result<Table, Exception>> Fetch(string tableName)
     {
         _lock ??= await locks.StartWrite(TableDescriptor.FromName(tableName));
@@ -18,13 +23,13 @@ public class TableUpdater(FileResolver resolver, LockManager locks): IDisposable
             var tableSchema = JsonSerializer.Deserialize<TableDescriptor>(schemaContent);
             if (tableSchema is null)
                 return new Exception("Failed loading schema");
-            
+
             var tableContent =
                 await File.ReadAllTextAsync(resolver.ResolveTable(TableDescriptor.FromName(tableName)));
             var tableRows = JsonSerializer.Deserialize<List<TableRow>>(tableContent);
             if (tableRows is null)
                 return new Exception("Failed loading table");
-            
+
             return new Table(tableSchema, tableRows);
         }
         catch (Exception e)
@@ -32,7 +37,7 @@ public class TableUpdater(FileResolver resolver, LockManager locks): IDisposable
             return e;
         }
     }
-    
+
     public async Task<Result<bool, Exception>> Update(Table table)
     {
         _lock ??= await locks.StartWrite(table.Descriptor);
@@ -50,10 +55,5 @@ public class TableUpdater(FileResolver resolver, LockManager locks): IDisposable
         {
             return e;
         }
-    }
-
-    public void Dispose()
-    {
-        _lock?.Dispose();
     }
 }

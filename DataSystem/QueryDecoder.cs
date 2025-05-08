@@ -1,8 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using ShitDB.DataSystem.QueryHandler;
 using ShitDB.Domain;
 using ShitDB.Util;
-using Type = ShitDB.Domain.Type;
 
 namespace ShitDB.DataSystem;
 
@@ -13,7 +13,7 @@ public class QueryDecoder(
     SelectHandler selectHandler,
     UpdateHandler updateHandler,
     DeleteHandler deleteHandler
-    )
+)
 {
     public async Task<Result<List<TableRow>, Exception>> DecodeQuery(string query)
     {
